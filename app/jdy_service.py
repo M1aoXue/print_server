@@ -3,15 +3,16 @@ import json
 import hmac
 import hashlib
 import requests
+import time
 from flask import current_app
-from .models import JandoyunRecord, db
+from .models import JDYRecord, db
 
-class JandoyunService:
+class JDYService:
     def __init__(self):
-        self.app_id = current_app.config['JANDOYUN_APP_ID']
-        self.app_secret = current_app.config['JANDOYUN_APP_SECRET']
-        self.api_url = current_app.config['JANDOYUN_API_URL']
-        self.webhook_secret = current_app.config['JANDOYUN_WEBHOOK_SECRET']
+        self.app_id = current_app.config['JDY_APP_ID']
+        self.app_secret = current_app.config['JDY_APP_SECRET']
+        self.api_url = current_app.config['JDY_API_URL']
+        self.webhook_secret = current_app.config['JDY_WEBHOOK_SECRET']
         self.access_token = None
         self.token_expires_at = 0
     
@@ -66,7 +67,7 @@ class JandoyunService:
             
             if result.get('code') == 0:
                 # 保存记录到数据库
-                new_record = JandoyunRecord(
+                new_record = JDYRecord(
                     form_id=form_id,
                     record_id=result.get('data', {}).get('_id'),
                     data=data
@@ -105,7 +106,7 @@ class JandoyunService:
             
             if result.get('code') == 0:
                 # 更新数据库中的记录
-                record = JandoyunRecord.query.filter_by(record_id=record_id).first()
+                record = JDYRecord.query.filter_by(record_id=record_id).first()
                 if record:
                     record.data = data
                     record.updated_at = db.func.current_timestamp()
@@ -134,45 +135,70 @@ class JandoyunService:
             return False
     
     def process_webhook_event(self, event_data):
-        """处理简道云Webhook事件"""
+        """处理Webhook事件"""
         try:
-            # 获取事件类型和数据
+            # 局部导入以避免循环依赖
+            from .business_processor import business_processor
+            
             event_type = event_data.get('type')
             form_id = event_data.get('app', {}).get('id')
             record_data = event_data.get('data')
             record_id = record_data.get('_id') if record_data else None
             
+            current_app.logger.info(f"接收到Webhook事件: 类型={event_type}, 表单ID={form_id}, 记录ID={record_id}")
+            
             if event_type == 'data_add':
                 # 处理新增记录事件
-                existing_record = JandoyunRecord.query.filter_by(record_id=record_id).first()
+                existing_record = JDYRecord.query.filter_by(record_id=record_id).first()
                 if not existing_record:
-                    new_record = JandoyunRecord(
+                    new_record = JDYRecord(
                         form_id=form_id,
                         record_id=record_id,
                         data=record_data
                     )
                     db.session.add(new_record)
                     db.session.commit()
-                    return True, "新增记录处理成功"
+                    
+                    # 调用业务处理器处理表单记录
+                    success, message = business_processor.process_form_record(form_id, record_id, record_data)
+                    if success:
+                        return True, f"新增记录处理成功，{message}"
+                    else:
+                        return True, f"新增记录保存成功，但处理失败: {message}"
+                else:
+                    return False, "记录已存在"
                 
             elif event_type == 'data_update':
                 # 处理更新记录事件
-                record = JandoyunRecord.query.filter_by(record_id=record_id).first()
+                record = JDYRecord.query.filter_by(record_id=record_id).first()
                 if record:
                     record.data = record_data
                     record.updated_at = db.func.current_timestamp()
                     db.session.commit()
                     return True, "更新记录处理成功"
-            
+                else:
+                    return False, "记录不存在"
+                
             elif event_type == 'data_delete':
                 # 处理删除记录事件
-                record = JandoyunRecord.query.filter_by(record_id=record_id).first()
+                record = JDYRecord.query.filter_by(record_id=record_id).first()
                 if record:
                     db.session.delete(record)
                     db.session.commit()
                     return True, "删除记录处理成功"
+                else:
+                    return False, "记录不存在"
             
-            return False, "不支持的事件类型或记录不存在"
+            elif event_type == 'workflow_complete':
+                # 处理流程完成事件
+                flow_id = event_data.get('workflow', {}).get('id')
+                success, message = business_processor.process_flow_complete(flow_id, form_id, record_id, record_data)
+                if success:
+                    return True, f"流程完成处理成功: {message}"
+                else:
+                    return False, message
+                
+            return False, f"不支持的事件类型: {event_type}"
         except Exception as e:
             current_app.logger.error(f"处理Webhook事件异常: {str(e)}")
             return False, str(e)

@@ -1,5 +1,6 @@
 import time
 import requests
+import time
 from flask import current_app
 from .models import ExternalApiLog, db
 
@@ -113,3 +114,81 @@ class ExternalApiService:
             
             current_app.logger.error(f"调用外部API发生未知错误 ({full_url}): {str(e)}")
             return None
+    
+    def trigger_calculation_task(self, calculation_data):
+        """触发计算任务"""
+        current_app.logger.info("触发外部计算任务")
+        
+        # 调用外部API触发计算任务
+        result = self.call_api(
+            endpoint='calculation/trigger',
+            method='POST',
+            data=calculation_data
+        )
+        
+        if result and 'task_id' in result:
+            task_id = result['task_id']
+            current_app.logger.info(f"计算任务触发成功，任务ID: {task_id}")
+            return True, task_id
+        else:
+            current_app.logger.error(f"计算任务触发失败: {result}")
+            return False, result
+    
+    def get_calculation_result(self, task_id):
+        """获取计算任务结果"""
+        current_app.logger.info(f"获取计算任务结果: {task_id}")
+        
+        # 调用外部API获取计算结果
+        result = self.call_api(
+            endpoint=f'calculation/result/{task_id}',
+            method='GET'
+        )
+        
+        # 处理结果
+        if result:
+            # 检查任务状态
+            status = result.get('status', '').lower()
+            
+            if status == 'completed':
+                # 任务完成，返回结果
+                return True, result.get('result', None)
+            elif status == 'failed':
+                # 任务失败
+                error_message = result.get('error', '计算任务失败')
+                current_app.logger.error(f"计算任务失败: {task_id}, 错误: {error_message}")
+                return False, error_message
+            elif status == 'processing':
+                # 任务仍在处理中
+                current_app.logger.info(f"计算任务仍在处理中: {task_id}")
+                return None, None
+            else:
+                # 未知状态
+                current_app.logger.warning(f"计算任务状态未知: {task_id}, 状态: {status}")
+                return None, None
+        else:
+            # API调用失败
+            current_app.logger.error(f"获取计算结果失败: {task_id}")
+            return None, None
+    
+    def poll_calculation(self, task_id, max_retries=30, poll_interval=30):
+        """轮询计算任务结果"""
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            current_app.logger.info(f"轮询计算任务 {task_id}, 第 {retry_count + 1}/{max_retries} 次")
+            
+            # 获取计算结果
+            status, result = self.get_calculation_result(task_id)
+            
+            if status is not None:
+                # 任务已完成或失败
+                return status, result
+            
+            # 等待一段时间后重试
+            time.sleep(poll_interval)
+            retry_count += 1
+        
+        # 达到最大重试次数
+        error_message = f"计算任务超时: {task_id}, 已重试 {max_retries} 次"
+        current_app.logger.error(error_message)
+        return False, error_message

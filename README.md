@@ -71,19 +71,70 @@ flask db upgrade
 
 ### 7. 运行应用
 
+**开发环境:**
 ```bash
 python run.py
 ```
 
 应用将在 http://localhost:5001 启动
 
+**注意：** `python run.py` 仅适用于开发环境，在生产环境中应使用下面介绍的生产级WSGI服务器。
+
+### 8. 生产环境部署
+
+本项目提供了使用Gunicorn（生产级WSGI服务器）运行的配置。
+
+#### 8.1 安装生产依赖
+
+```bash
+./start_production.sh install
+```
+
+或者手动安装：
+
+```bash
+pip install gunicorn
+```
+
+#### 8.2 启动生产服务器
+
+使用提供的启动脚本：
+
+```bash
+./start_production.sh start
+```
+
+或者直接使用gunicorn命令：
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:5001 wsgi:app
+```
+
+其中参数说明：
+- `-w 4`：使用4个工作进程（可根据服务器CPU核心数调整）
+- `-b 0.0.0.0:5001`：绑定到所有网络接口的5001端口
+- `wsgi:app`：指向wsgi.py文件中的app对象
+
+#### 8.3 生产环境配置注意事项
+
+1. **环境变量配置**：确保在生产环境中正确设置所有必要的环境变量，特别是：
+   - `SECRET_KEY`：设置为强随机值，用于会话安全
+   - `DATABASE_URI`：生产环境的数据库连接字符串
+   - 各种API密钥和密码
+
+2. **关闭调试模式**：生产环境配置已默认关闭调试模式（DEBUG=False）
+
+3. **使用HTTPS**：在生产环境中，建议通过反向代理（如Nginx）配置HTTPS
+
+4. **日志管理**：生产环境中应配置适当的日志级别和日志轮转
+
 ## API端点
 
 ### 简道云相关
 
-- **POST /api/jandoyun/webhook**：接收简道云Webhook事件
-- **POST /api/jandoyun/records**：创建简道云表单记录
-- **PUT /api/jandoyun/records/<record_id>**：更新简道云表单记录
+- **POST /api/jdy/webhook**：接收简道云Webhook事件
+- **POST /api/jdy/records**：创建简道云表单记录
+- **PUT /api/jdy/records/<record_id>**：更新简道云表单记录
 
 ### 外部API相关
 
@@ -107,10 +158,10 @@ python run.py
 
 ### 简道云配置
 
-- **JANDOYUN_APP_ID**：简道云应用ID
-- **JANDOYUN_APP_SECRET**：简道云应用密钥
-- **JANDOYUN_API_URL**：简道云API基础URL
-- **JANDOYUN_WEBHOOK_SECRET**：简道云Webhook密钥，用于验证签名
+- **JDY_APP_ID**：简道云应用ID
+- **JDY_APP_SECRET**：简道云应用密钥
+- **JDY_API_URL**：简道云API基础URL
+- **JDY_WEBHOOK_SECRET**：简道云Webhook密钥，用于验证签名
 
 ### 外部API配置
 
@@ -160,7 +211,7 @@ print_server/
 │   ├── config.py         # 配置文件
 │   ├── routes.py         # 网页路由
 │   ├── models.py         # 数据库模型
-│   ├── jandoyun_service.py # 简道云服务
+│   ├── jdy_service.py # 简道云服务
 │   ├── external_api_service.py # 外部API服务
 │   ├── scheduler.py      # 定时任务调度器
 │   ├── static/           # 静态文件

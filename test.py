@@ -7,8 +7,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # 导入应用模块
 from app import create_app, db
-from app.models import JandoyunRecord, ExternalApiLog, ProcessingTask
-from app.jandoyun_service import JandoyunService
+from app.models import JDYRecord, ExternalApiLog, ProcessingTask
+from app.jdy_service import JDYService
 from app.external_api_service import ExternalApiService
 
 # 创建测试应用实例
@@ -29,11 +29,11 @@ with app.app_context():
         print("\n2. 测试添加测试数据...")
         try:
             # 添加测试记录
-            test_record = JandoyunRecord(
-                form_id="test_form_id",
-                record_id=f"test_record_{datetime.now().timestamp()}",
-                data={"name": "测试记录", "status": "测试中"}
-            )
+            test_record = JDYRecord(
+                 form_id="test_form_id",
+                 record_id=f"test_record_{datetime.now().timestamp()}",
+                 data={"name": "测试记录", "status": "测试中"}
+             )
             db.session.add(test_record)
             
             # 添加测试任务
@@ -59,7 +59,7 @@ with app.app_context():
             print("\n3. 测试查询数据...")
             try:
                 # 查询最近添加的记录
-                recent_records = JandoyunRecord.query.order_by(JandoyunRecord.created_at.desc()).limit(1).all()
+                recent_records = JDYRecord.query.order_by(JDYRecord.created_at.desc()).limit(1).all()
                 recent_tasks = ProcessingTask.query.order_by(ProcessingTask.created_at.desc()).limit(1).all()
                 recent_logs = ExternalApiLog.query.order_by(ExternalApiLog.created_at.desc()).limit(1).all()
                 
@@ -79,13 +79,13 @@ with app.app_context():
     # 4. 测试服务初始化
     print("\n4. 测试服务初始化...")
     try:
-        jandoyun_service = JandoyunService()
+        jdy_service = JDYService()
         external_api_service = ExternalApiService()
         print("✅ 服务初始化成功！")
         
         # 显示配置信息（不显示敏感信息）
         print("\n5. 配置信息摘要:")
-        print(f"- 简道云API URL: {app.config['JANDOYUN_API_URL']}")
+        print(f"- 简道云API URL: {app.config['JDY_API_URL']}")
         print(f"- 外部API URL: {app.config['EXTERNAL_API_URL']}")
         print(f"- 数据库URI: {app.config['SQLALCHEMY_DATABASE_URI'].split('@')[0]}@***")
         
@@ -98,5 +98,5 @@ with app.app_context():
     print("\n下一步操作建议：")
     print("1. 确保.env文件中的所有配置项都已正确填写")
     print("2. 运行 'python run.py' 启动应用服务器")
-    print("3. 在简道云中配置Webhook，指向 http://your-server:5001/api/jandoyun/webhook")
+    print("3. 在简道云中配置Webhook，指向 http://your-server:5001/api/jdy/webhook")
     print("4. 使用API测试工具（如Postman）测试各个API端点")

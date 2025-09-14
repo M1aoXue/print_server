@@ -1,11 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>Flask Quick Start</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亚铭威印刷AI智能报价后台服务</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Flask 快速启动脚手架</h1>
-    <p>访问 <a href="/api/hello">/api/hello</a> 来调用 REST API</p>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1>亚铭威印刷AI智能报价后台服务</h1>
+            <p>基于人工智能的印刷报价与管理系统</p>
+        </header>
+        
+        <main>
+            <div class="features">
+                <div class="feature-card">
+                    <svg class="feature-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="#4a6fa5" stroke-width="2"/>
+                        <path d="M9 17H15" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M9 13H15" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M9 9H13" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>智能报价管理</h3>
+                    <p>基于AI算法的印刷报价系统，精准计算成本与报价</p>
+                </div>
+                
+                <div class="feature-card">
+                    <svg class="feature-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 11H3" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M20 15H3" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M20 7H3" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M20 19H3" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>数据集成服务</h3>
+                    <p>与简道云等平台无缝对接，实现数据实时同步与处理</p>
+                </div>
+                
+                <div class="feature-card">
+                    <svg class="feature-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="#4a6fa5" stroke-width="2"/>
+                        <path d="M8 16L8 12" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 16L12 8" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M16 16L16 14" stroke="#4a6fa5" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>状态监控与通知</h3>
+                    <p>实时监控系统运行状态，异常情况及时通知管理员</p>
+                </div>
+            </div>
+            
+            <div class="api-links">
+                <h3>API接口</h3>
+                <div class="links-grid">
+                    <a href="/api/hello" class="api-link">/api/hello</a>
+                    <a href="/api/jdy/webhook" class="api-link">/api/jdy/webhook</a>
+                    <a href="/api/jdy/records" class="api-link">/api/jdy/records</a>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 亚铭威印刷AI智能报价系统 - 后台服务</p>
+        </footer>
+    </div>
 </body>
 </html>

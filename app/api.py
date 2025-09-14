@@ -1,8 +1,8 @@
-from flask import Blueprint, jsonify, request
-from .jandoyun_service import JandoyunService
+from flask import Blueprint, request, jsonify
+from .jdy_service import JDYService
 from .external_api_service import ExternalApiService
-from .wechat_service import wechat_service
-from .models import JandoyunRecord, ProcessingTask, db
+from .wechat_notification_service import WechatNotificationService
+from .models import JDYRecord, ProcessingTask, db
 from . import db
 
 api_bp = Blueprint('api', __name__)
@@ -12,8 +12,8 @@ def hello():
     name = request.args.get('name', 'World')
     return jsonify({'message': f'Hello, {name}!'})
 
-@api_bp.route('/jandoyun/webhook', methods=['POST'])
-def jandoyun_webhook():
+@api_bp.route('/jdy/webhook', methods=['POST'])
+def jdy_webhook():
     """接收简道云Webhook事件"""
     try:
         # 获取请求数据
@@ -21,12 +21,12 @@ def jandoyun_webhook():
         
         # 验证签名
         signature = request.headers.get('X-JDY-Signature')
-        jandoyun_service = JandoyunService()
+        jdy_service = JDYService()
         
         # 注意：在实际验证时，需要使用原始请求体
         # 这里为了简化，直接使用JSON解析后的数据
         # 实际应用中应该使用request.get_data()获取原始数据
-        is_valid = jandoyun_service.verify_webhook_signature(
+        is_valid = jdy_service.verify_webhook_signature(
             request_data=request.get_data(as_text=True),
             signature=signature
         )
@@ -35,7 +35,7 @@ def jandoyun_webhook():
             return jsonify({'error': '签名验证失败'}), 401
         
         # 处理事件
-        success, message = jandoyun_service.process_webhook_event(data)
+        success, message = jdy_service.process_webhook_event(data)
         
         if success:
             return jsonify({'success': True, 'message': message}), 200
@@ -44,8 +44,8 @@ def jandoyun_webhook():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@api_bp.route('/jandoyun/records', methods=['POST'])
-def create_jandoyun_record():
+@api_bp.route('/jdy/records', methods=['POST'])
+def create_jdy_record():
     """创建简道云表单记录"""
     try:
         data = request.json
@@ -55,8 +55,8 @@ def create_jandoyun_record():
         if not form_id or not record_data:
             return jsonify({'error': '缺少必要参数'}), 400
         
-        jandoyun_service = JandoyunService()
-        result = jandoyun_service.create_record(form_id, record_data)
+        jdy_service = JDYService()
+        result = jdy_service.create_record(form_id, record_data)
         
         if result:
             return jsonify({'success': True, 'data': result}), 201
@@ -65,8 +65,8 @@ def create_jandoyun_record():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@api_bp.route('/jandoyun/records/<record_id>', methods=['PUT'])
-def update_jandoyun_record(record_id):
+@api_bp.route('/jdy/records/<record_id>', methods=['PUT'])
+def update_jdy_record(record_id):
     """更新简道云表单记录"""
     try:
         data = request.json
@@ -76,8 +76,8 @@ def update_jandoyun_record(record_id):
         if not form_id or not record_data:
             return jsonify({'error': '缺少必要参数'}), 400
         
-        jandoyun_service = JandoyunService()
-        result = jandoyun_service.update_record(form_id, record_id, record_data)
+        jdy_service = JDYService()
+        result = jdy_service.update_record(form_id, record_id, record_data)
         
         if result:
             return jsonify({'success': True, 'data': result}), 200
@@ -163,20 +163,22 @@ def send_wechat_text_message():
     """发送企业微信文本消息"""
     try:
         data = request.json
-        user_ids = data.get('user_ids')
+        user_ids = data.get('user_ids', '@all')
         content = data.get('content')
         safe = data.get('safe', 0)
         
-        if not user_ids or not content:
+        if not content:
             return jsonify({'error': '缺少必要参数'}), 400
         
+        # 创建企业微信通知服务实例
+        wechat_notification_service = WechatNotificationService()
         # 发送消息
-        result = wechat_service.send_text_message(user_ids, content, safe)
+        success, message = wechat_notification_service.send_text_message(content, touser=user_ids)
         
-        if result.get('errcode') == 0:
+        if success:
             return jsonify({'success': True, 'message': '消息发送成功'}), 200
         else:
-            return jsonify({'success': False, 'error': result.get('errmsg', '发送失败')}), 500
+            return jsonify({'success': False, 'error': message}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -185,19 +187,27 @@ def send_wechat_text_card_message():
     """发送企业微信文本卡片消息"""
     try:
         data = request.json
-        user_ids = data.get('user_ids')
+        user_ids = data.get('user_ids', '@all')
         title = data.get('title')
         description = data.get('description')
         url = data.get('url')
         btn_text = data.get('btn_text', '详情')
         
-        if not user_ids or not title or not description or not url:
+        if not title or not description or not url:
             return jsonify({'error': '缺少必要参数'}), 400
         
+        # 创建企业微信通知服务实例
+        wechat_notification_service = WechatNotificationService()
         # 发送消息
-        result = wechat_service.send_text_card_message(user_ids, title, description, url, btn_text)
+        success, message = wechat_notification_service.send_textcard_message(
+            title=title,
+            description=description,
+            url=url,
+            btntxt=btn_text,
+            touser=user_ids
+        )
         
-        if result.get('errcode') == 0:
+        if success:
             return jsonify({'success': True, 'message': '消息发送成功'}), 200
         else:
             return jsonify({'success': False, 'error': result.get('errmsg', '发送失败')}), 500
@@ -213,7 +223,7 @@ def get_records():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         
-        query = JandoyunRecord.query
+        query = JDYRecord.query
         
         if processed is not None:
             query = query.filter_by(processed=processed.lower() == 'true')
@@ -222,7 +232,7 @@ def get_records():
             query = query.filter_by(form_id=form_id)
         
         # 分页
-        pagination = query.order_by(JandoyunRecord.created_at.desc()).paginate(
+        pagination = query.order_by(JDYRecord.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         

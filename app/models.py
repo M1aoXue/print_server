@@ -1,8 +1,8 @@
 from datetime import datetime
 from . import db
 
-class JandoyunRecord(db.Model):
-    __tablename__ = 'jandoyun_records'
+class JDYRecord(db.Model):
+    __tablename__ = 'jdy_records'
     
     id = db.Column(db.Integer, primary_key=True)
     form_id = db.Column(db.String(50), nullable=False)
