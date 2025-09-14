@@ -1,0 +1,59 @@
+# 虚拟环境
+venv/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 依赖
+*.egg*
+pip-selfcheck.json
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 测试
+.coverage
+.cache
+.pytest_cache/
+coverage.xml
+
+# 构建
+build/
+dist/
+*.egg-info/
+
+# 日志
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 数据库
+instance/
+*.db
+*.sqlite3
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 其他
+*.pem
+*.key
+*.crt
+*.p12
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+
+# Flask相关
+.migrated
